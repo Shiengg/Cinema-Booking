@@ -1,0 +1,38 @@
+package com.example.cinema_booking.entity;
+
+import com.example.cinema_booking.enums.SeatStatus;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+
+@Entity
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class Seat {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "screening_id")
+    Screening screening;
+
+    String seatNumber;
+    String rowNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    SeatStatus status = SeatStatus.AVAILABLE;
+
+    @Version
+    Long version;
+
+    @Transient
+    @Builder.Default
+    AtomicBoolean isLoocked = new AtomicBoolean(false);
+
+    @OneToOne(mappedBy = "seat", cascade = CascadeType.ALL)
+    Booking currentBooking;
+}
