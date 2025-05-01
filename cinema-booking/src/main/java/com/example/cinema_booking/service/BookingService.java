@@ -1,3 +1,4 @@
+// service/BookingService.java
 package com.example.cinema_booking.service;
 
 import com.example.cinema_booking.constants.BookingConstants;
@@ -15,8 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,24 @@ public class BookingService {
     private final ExecutorService bookingExecutor =
             Executors.newFixedThreadPool(BookingConstants.MAX_CONCURRENT_BOOKINGS);
     private final ConcurrentHashMap<Long, ReentrantLock> seatLocks = new ConcurrentHashMap<>();
+
+    public CompletableFuture<List<BookingResponseDTO>> getAllBookings() {
+        return CompletableFuture.supplyAsync(() ->
+            bookingRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList()),
+            bookingExecutor
+        );
+    }
+
+    public CompletableFuture<BookingResponseDTO> getBookingById(Long id) {
+        return CompletableFuture.supplyAsync(() ->
+            bookingRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new BookingException("Booking not found")),
+            bookingExecutor
+        );
+    }
 
     @Transactional
     public CompletableFuture<BookingResponseDTO> createBooking(BookingRequestDTO request) {
@@ -44,6 +65,41 @@ public class BookingService {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new BookingException("Booking process was interrupted");
+            } finally {
+                if (seatLock.isHeldByCurrentThread()) {
+                    seatLock.unlock();
+                }
+            }
+        }, bookingExecutor);
+    }
+
+    @Transactional
+    public CompletableFuture<BookingResponseDTO> cancelBooking(Long id) {
+        return CompletableFuture.supplyAsync(() -> {
+            Booking booking = bookingRepository.findById(id)
+                    .orElseThrow(() -> new BookingException("Booking not found"));
+
+            ReentrantLock seatLock = seatLocks.computeIfAbsent(
+                    booking.getSeat().getId(),
+                    k -> new ReentrantLock()
+            );
+
+            try {
+                if (!seatLock.tryLock(BookingConstants.SEAT_LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    throw new BookingException("Unable to acquire lock for seat");
+                }
+
+                booking.setStatus(BookingStatus.CANCELLED);
+                Seat seat = booking.getSeat();
+                seat.setStatus(SeatStatus.AVAILABLE);
+                seat.setCurrentBooking(null);
+
+                seatRepository.save(seat);
+                Booking savedBooking = bookingRepository.save(booking);
+                return convertToDTO(savedBooking);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new BookingException("Cancellation process was interrupted");
             } finally {
                 if (seatLock.isHeldByCurrentThread()) {
                     seatLock.unlock();
