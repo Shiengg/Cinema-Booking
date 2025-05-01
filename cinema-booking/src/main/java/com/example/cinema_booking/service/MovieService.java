@@ -26,8 +26,9 @@ public class MovieService {
         return convertToResponse(savedMovie);
     }
 
-    public String getMovieById(){
-        return "Getted";
+    public String getMovieById(Long id){
+        Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " +id));
+        return convertToResponse(movie);
     }
 
     private MovieResponseDTO convertToResponse(Movie movie) {

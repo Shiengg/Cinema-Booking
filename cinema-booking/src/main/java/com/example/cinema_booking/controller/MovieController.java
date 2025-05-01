@@ -23,8 +23,4 @@ public class MovieController {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieService.createMovie(request));
     }
 
-    @GetMapping
-    public ResponseEntity<String> getMovieById(){
-        return ResponseEntity.ok(movieService.getMovieById());
-    }
 }
