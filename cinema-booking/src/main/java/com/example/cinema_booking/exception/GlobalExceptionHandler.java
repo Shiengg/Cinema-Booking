@@ -1,7 +1,5 @@
 package com.example.cinema_booking.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -59,7 +57,3 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }
-
-@Data
-@AllArgsConstructor
-public class

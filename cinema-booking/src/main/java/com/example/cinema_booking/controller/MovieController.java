@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid; // Spring Boot 3
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/movies")
 @RequiredArgsConstructor
@@ -23,4 +25,13 @@ public class MovieController {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieService.createMovie(request));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<MovieResponseDTO> getMovie(@PathVariable Long id){
+        return ResponseEntity.ok(movieService.getMovieById(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<MovieResponseDTO>> getAllMovie(){
+        return ResponseEntity.ok(movieService.getAllMovie());
+    }
 }

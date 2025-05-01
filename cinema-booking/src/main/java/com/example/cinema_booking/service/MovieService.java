@@ -3,11 +3,15 @@ package com.example.cinema_booking.service;
 import com.example.cinema_booking.dto.request.MovieRequestDTO;
 import com.example.cinema_booking.dto.response.MovieResponseDTO;
 import com.example.cinema_booking.entity.Movie;
+import com.example.cinema_booking.exception.ResourceNotFoundException;
 import com.example.cinema_booking.repository.MovieRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,9 +30,15 @@ public class MovieService {
         return convertToResponse(savedMovie);
     }
 
-    public String getMovieById(Long id){
-        Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " +id));
+    public MovieResponseDTO getMovieById(Long id){
+        Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " + id));
         return convertToResponse(movie);
+    }
+
+    public List<MovieResponseDTO> getAllMovie(){
+        return movieRepository.findAll().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
     }
 
     private MovieResponseDTO convertToResponse(Movie movie) {
