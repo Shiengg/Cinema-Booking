@@ -85,7 +85,7 @@ docker-compose restart [service_name]  # ví dụ: docker-compose restart app
 ### Xóa tất cả data và rebuild
 ```bash
 docker-compose down -v
-docker-compose up --build --no-cache
+docker-compose up --build
 ```
 
 ## Xử lý sự cố
@@ -100,11 +100,7 @@ docker-compose up --build --no-cache
 
 3. **Database không khởi động**
    - Xóa volume cũ: `docker-compose down -v`
-   - Khởi động lại với volume mới: `docker-compose up --build`
-
-## Đóng góp
-
-Nếu bạn muốn đóng góp cho dự án, hãy tạo pull request hoặc báo cáo issues trên GitHub.
+   - Khởi động lại với volume mới: `docker-compose up --build --no-cache`
 
 ## Giấy phép
 
