@@ -21,7 +21,7 @@ Trước khi bắt đầu, hãy đảm bảo bạn đã cài đặt:
 ### 2. Clone dự án
 
 ```bash
-git clone https://github.com/yourusername/Cinema-Booking.git
+git clone https://github.com/Shiengg/Cinema-Booking.git
 cd Cinema-Booking
 ```
 
