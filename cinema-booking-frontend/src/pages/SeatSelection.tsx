@@ -5,6 +5,8 @@ import { SeatMap } from '../components/SeatMap';
 import { BookingForm } from '../components/BookingForm';
 import { movieService, screeningService, bookingService } from '../services/api';
 import { Movie, Seat, BookingRequest, Screening } from '../types';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 
 export const SeatSelection: React.FC = () => {
     const { movieId, screeningId } = useParams<{ movieId: string; screeningId: string }>();
@@ -155,16 +157,62 @@ export const SeatSelection: React.FC = () => {
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom align="center">
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 4
+            }}>
+                <Button
+                    variant="outlined"
+                    startIcon={<ArrowBackIcon />}
+                    onClick={() => navigate(`/movie/${movieId}/screenings`)}
+                    sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        px: 3,
+                        py: 1,
+                        fontSize: '1rem',
+                    }}
+                >
+                    Back to Screenings
+                </Button>
+            </Box>
+
+            <Typography
+                variant="h4"
+                component="h1"
+                gutterBottom
+                align="center"
+                sx={{
+                    fontWeight: 'bold',
+                    mb: 1
+                }}
+            >
                 {movie.title}
             </Typography>
 
-            <Typography variant="h6" gutterBottom align="center" color="text.secondary">
+            <Typography
+                variant="h6"
+                gutterBottom
+                align="center"
+                color="text.secondary"
+                sx={{ mb: 4 }}
+            >
                 {new Date(screening.screeningTime).toLocaleString()}
             </Typography>
 
             <Box sx={{ my: 4 }}>
-                <Typography variant="h6" gutterBottom align="center">
+                <Typography
+                    variant="h5"
+                    gutterBottom
+                    align="center"
+                    sx={{
+                        fontWeight: 'bold',
+                        color: 'primary.main',
+                        mb: 3
+                    }}
+                >
                     Select Your Seat
                 </Typography>
 
@@ -175,13 +223,33 @@ export const SeatSelection: React.FC = () => {
                 />
             </Box>
 
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{
+                mt: 4,
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 2
+            }}>
                 <Button
                     variant="contained"
                     color="primary"
                     disabled={!selectedSeat || isSubmitting}
                     onClick={handleContinueToBooking}
                     size="large"
+                    startIcon={<ConfirmationNumberIcon />}
+                    sx={{
+                        py: 1.5,
+                        px: 4,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+                        },
+                        transition: 'all 0.2s',
+                    }}
                 >
                     {isSubmitting ? 'Processing...' : 'Continue to Booking'}
                 </Button>
@@ -203,7 +271,14 @@ export const SeatSelection: React.FC = () => {
                 onClose={() => setError('')}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
-                <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>
+                <Alert
+                    onClose={() => setError('')}
+                    severity="error"
+                    sx={{
+                        width: '100%',
+                        borderRadius: 2
+                    }}
+                >
                     {error}
                 </Alert>
             </Snackbar>
