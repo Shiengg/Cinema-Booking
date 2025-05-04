@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Movie, Screening, Seat, Booking, BookingRequest } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = '/api';
 
 const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
