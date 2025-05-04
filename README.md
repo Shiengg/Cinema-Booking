@@ -11,14 +11,21 @@ Trước khi bắt đầu, hãy đảm bảo bạn đã cài đặt:
 
 ## Cài đặt và Chạy
 
-### 1. Clone dự án
+### 1. Khởi động Docker Desktop
+
+⚠️ **Quan trọng**: Trước khi bắt đầu, hãy đảm bảo:
+- Đã khởi động Docker Desktop
+- Đợi Docker Desktop khởi động hoàn tất (biểu tượng Docker ở taskbar đã ngừng quay)
+- Kiểm tra Docker Desktop đang chạy bằng cách mở Terminal và gõ: `docker --version`
+
+### 2. Clone dự án
 
 ```bash
 git clone https://github.com/yourusername/Cinema-Booking.git
 cd Cinema-Booking
 ```
 
-### 2. Khởi động hệ thống
+### 3. Khởi động hệ thống
 
 Sử dụng Docker Compose để khởi động toàn bộ hệ thống:
 
@@ -32,7 +39,7 @@ Lệnh này sẽ:
 - Khởi động MySQL database
 - Khởi động Adminer (công cụ quản lý database)
 
-### 3. Truy cập các services
+### 4. Truy cập các services
 
 Sau khi tất cả các services đã khởi động thành công, bạn có thể truy cập:
 
