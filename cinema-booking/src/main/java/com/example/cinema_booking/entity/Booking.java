@@ -15,6 +15,10 @@ public class Booking {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "screening_id")
+    Screening screening;
+
     @OneToOne
     @JoinColumn(name = "seat_id")
     Seat seat;

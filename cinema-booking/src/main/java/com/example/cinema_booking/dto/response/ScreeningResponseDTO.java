@@ -1,17 +1,27 @@
 package com.example.cinema_booking.dto.response;
 
-import lombok.*;
+import com.example.cinema_booking.entity.Screening;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-@Data @Builder
-@NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
 public class ScreeningResponseDTO {
     private Long id;
-    private String movieTitle;
+    private MovieResponseDTO movie;
     private LocalDateTime screeningTime;
     private Integer totalSeats;
     private Integer availableSeats;
-    private List<SeatResponseDTO> seats;
-}
+
+    public static ScreeningResponseDTO fromEntity(Screening screening) {
+        return ScreeningResponseDTO.builder()
+                .id(screening.getId())
+                .movie(MovieResponseDTO.fromEntity(screening.getMovie()))
+                .screeningTime(screening.getScreeningTime())
+                .totalSeats(screening.getTotalSeats())
+                .availableSeats(screening.getAvailableSeats())
+                .build();
+    }
+} 

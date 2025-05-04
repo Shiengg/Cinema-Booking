@@ -1,19 +1,25 @@
 package com.example.cinema_booking.dto.response;
 
-import jakarta.persistence.Entity;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import com.example.cinema_booking.entity.Movie;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class MovieResponseDTO {
-    Long id;
-    String title;
-    String genre;
-    String description;
-    double ticketPrice;
+    private Long id;
+    private String title;
+    private String genre;
+    private String description;
+    private double ticketPrice;
+
+    public static MovieResponseDTO fromEntity(Movie movie) {
+        return MovieResponseDTO.builder()
+                .id(movie.getId())
+                .title(movie.getTitle())
+                .genre(movie.getGenre())
+                .description(movie.getDescription())
+                .ticketPrice(movie.getTicketPrice())
+                .build();
+    }
 }

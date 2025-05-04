@@ -1,160 +1,128 @@
 package com.example.cinema_booking.service;
 
 import com.example.cinema_booking.dto.request.ScreeningRequestDTO;
+import com.example.cinema_booking.dto.response.MovieResponseDTO;
 import com.example.cinema_booking.dto.response.ScreeningResponseDTO;
 import com.example.cinema_booking.dto.response.SeatResponseDTO;
 import com.example.cinema_booking.entity.Movie;
 import com.example.cinema_booking.entity.Screening;
 import com.example.cinema_booking.entity.Seat;
 import com.example.cinema_booking.enums.SeatStatus;
-import com.example.cinema_booking.exception.ResourceNotFoundException;
 import com.example.cinema_booking.repository.MovieRepository;
 import com.example.cinema_booking.repository.ScreeningRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
 public class ScreeningService {
     private final ScreeningRepository screeningRepository;
     private final MovieRepository movieRepository;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public CompletableFuture<List<ScreeningResponseDTO>> getAllScreenings() {
-        return CompletableFuture.supplyAsync(() -> {
-            lock.readLock().lock();
-            try {
-                return screeningRepository.findAll().stream()
-                        .map(this::convertToDTO)
-                        .collect(Collectors.toList());
-            } finally {
-                lock.readLock().unlock();
-            }
-        }, executorService);
-    }
-
-    public CompletableFuture<ScreeningResponseDTO> getScreeningWithSeats(Long id) {
-        return CompletableFuture.supplyAsync(() -> {
-            lock.readLock().lock();
-            try {
-                Screening screening = screeningRepository.findByIdWithLock(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Screening not found"));
-                return convertToDTO(screening);
-            } finally {
-                lock.readLock().unlock();
-            }
-        }, executorService);
-    }
-
+    @Async
     @Transactional
     public CompletableFuture<ScreeningResponseDTO> createScreening(ScreeningRequestDTO request) {
-        return CompletableFuture.supplyAsync(() -> {
-            lock.writeLock().lock();
-            try {
-                Movie movie = movieRepository.findById(request.getMovieId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
+        Movie movie = movieRepository.findById(request.getMovieId())
+                .orElseThrow(() -> new RuntimeException("Movie not found"));
 
-                Screening screening = Screening.builder()
-                        .movie(movie)
-                        .screeningTime(request.getScreeningTime())
-                        .totalSeats(request.getTotalSeats())
-                        .availableSeats(request.getTotalSeats())
+        Screening screening = Screening.builder()
+                .movie(movie)
+                .screeningTime(request.getScreeningTime())
+                .totalSeats(request.getTotalSeats())
+                .availableSeats(request.getTotalSeats())
+                .seats(ConcurrentHashMap.newKeySet())
+                .build();
+
+        // Create seats
+        for (int row = 0; row < request.getRowCount(); row++) {
+            String rowLabel = String.valueOf((char) ('A' + row));
+            for (int seatNum = 1; seatNum <= request.getSeatsPerRow(); seatNum++) {
+                Seat seat = Seat.builder()
+                        .screening(screening)
+                        .seatRow(rowLabel)
+                        .seatNumber(String.valueOf(seatNum))
+                        .status(SeatStatus.AVAILABLE)
                         .build();
-
-                // Create seats for the screening
-                createSeats(screening, request.getTotalSeats());
-
-                screening = screeningRepository.save(screening);
-                return convertToDTO(screening);
-            } finally {
-                lock.writeLock().unlock();
+                screening.getSeats().add(seat);
             }
-        }, executorService);
+        }
+
+        Screening savedScreening = screeningRepository.save(screening);
+        return CompletableFuture.completedFuture(convertToDTO(savedScreening));
     }
 
-    @Transactional
-    public CompletableFuture<ScreeningResponseDTO> updateScreening(Long id, ScreeningRequestDTO request) {
-        return CompletableFuture.supplyAsync(() -> {
-            lock.writeLock().lock();
-            try {
-                Screening screening = screeningRepository.findByIdWithLock(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Screening not found"));
-
-                Movie movie = movieRepository.findById(request.getMovieId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
-
-                screening.setMovie(movie);
-                screening.setScreeningTime(request.getScreeningTime());
-
-                // Only update seats if the total number has changed
-                if (!screening.getTotalSeats().equals(request.getTotalSeats())) {
-                    screening.setTotalSeats(request.getTotalSeats());
-                    screening.setAvailableSeats(request.getTotalSeats());
-                    screening.getSeats().clear();
-                    createSeats(screening, request.getTotalSeats());
-                }
-
-                screening = screeningRepository.save(screening);
-                return convertToDTO(screening);
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }, executorService);
+    @Async
+    @Transactional(readOnly = true)
+    public CompletableFuture<ScreeningResponseDTO> getScreeningById(Long id) {
+        Screening screening = screeningRepository.findByIdWithSeats(id)
+                .orElseThrow(() -> new RuntimeException("Screening not found"));
+        return CompletableFuture.completedFuture(convertToDTO(screening));
     }
 
-    @Transactional
-    public CompletableFuture<Void> deleteScreening(Long id) {
-        return CompletableFuture.runAsync(() -> {
-            lock.writeLock().lock();
-            try {
-                if (!screeningRepository.existsById(id)) {
-                    throw new ResourceNotFoundException("Screening not found");
-                }
-                screeningRepository.deleteById(id);
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }, executorService);
+    @Async
+    @Transactional(readOnly = true)
+    public CompletableFuture<List<SeatResponseDTO>> getAvailableSeats(Long screeningId) {
+        Screening screening = screeningRepository.findByIdWithSeats(screeningId)
+                .orElseThrow(() -> new RuntimeException("Screening not found"));
+
+        List<SeatResponseDTO> seats = screening.getSeats().stream()
+                .map(this::convertToSeatDTO)
+                .collect(Collectors.toList());
+
+        return CompletableFuture.completedFuture(seats);
     }
 
-    private void createSeats(Screening screening, int totalSeats) {
-        IntStream.range(0, totalSeats)
-                .parallel()
-                .forEach(i -> {
-                    Seat seat = Seat.builder()
-                            .screening(screening)
-                            .seatNumber(String.format("%d", i + 1))
-                            .status(SeatStatus.AVAILABLE)
-                            .build();
-                    screening.getSeats().add(seat);
-                });
+    @Async
+    @Transactional(readOnly = true)
+    public CompletableFuture<List<ScreeningResponseDTO>> getScreeningsByMovie(Long movieId) {
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new RuntimeException("Movie not found"));
+
+        List<ScreeningResponseDTO> screenings = movie.getScreenings().stream()
+                .map(screening -> {
+                    // Fetch screening with seats
+                    Screening fullScreening = screeningRepository.findByIdWithSeats(screening.getId())
+                            .orElseThrow(() -> new RuntimeException("Screening not found"));
+                    
+                    // Calculate available seats
+                    long availableSeats = fullScreening.getSeats().stream()
+                            .filter(seat -> seat.getStatus() == SeatStatus.AVAILABLE)
+                            .count();
+                    
+                    // Update available seats
+                    fullScreening.setAvailableSeats((int) availableSeats);
+                    
+                    return convertToDTO(fullScreening);
+                })
+                .collect(Collectors.toList());
+
+        return CompletableFuture.completedFuture(screenings);
     }
 
     private ScreeningResponseDTO convertToDTO(Screening screening) {
-        List<SeatResponseDTO> seatDTOs = screening.getSeats().stream()
-                .map(seat -> SeatResponseDTO.builder()
-                        .id(seat.getId())
-                        .seatNumber(seat.getSeatNumber())
-                        .status(seat.getStatus())
-                        .build())
-                .collect(Collectors.toList());
-
         return ScreeningResponseDTO.builder()
                 .id(screening.getId())
-                .movieTitle(screening.getMovie().getTitle())
+                .movie(MovieResponseDTO.fromEntity(screening.getMovie()))
                 .screeningTime(screening.getScreeningTime())
                 .totalSeats(screening.getTotalSeats())
                 .availableSeats(screening.getAvailableSeats())
-                .seats(seatDTOs)
+                .build();
+    }
+
+    private SeatResponseDTO convertToSeatDTO(Seat seat) {
+        return SeatResponseDTO.builder()
+                .id(seat.getId())
+                .seatRow(seat.getSeatRow())
+                .seatNumber(seat.getSeatNumber())
+                .status(seat.getStatus())
                 .build();
     }
 } 

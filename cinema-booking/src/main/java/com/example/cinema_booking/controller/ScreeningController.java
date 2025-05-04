@@ -2,8 +2,8 @@ package com.example.cinema_booking.controller;
 
 import com.example.cinema_booking.dto.request.ScreeningRequestDTO;
 import com.example.cinema_booking.dto.response.ScreeningResponseDTO;
+import com.example.cinema_booking.dto.response.SeatResponseDTO;
 import com.example.cinema_booking.service.ScreeningService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,36 +17,27 @@ import java.util.concurrent.CompletableFuture;
 public class ScreeningController {
     private final ScreeningService screeningService;
 
-    @GetMapping
-    public CompletableFuture<ResponseEntity<List<ScreeningResponseDTO>>> getAllScreenings() {
-        return screeningService.getAllScreenings()
-                .thenApply(ResponseEntity::ok);
-    }
-
-    @GetMapping("/{id}")
-    public CompletableFuture<ResponseEntity<ScreeningResponseDTO>> getScreening(@PathVariable Long id) {
-        return screeningService.getScreeningWithSeats(id)
-                .thenApply(ResponseEntity::ok);
-    }
-
     @PostMapping
-    public CompletableFuture<ResponseEntity<ScreeningResponseDTO>> createScreening(
-            @Valid @RequestBody ScreeningRequestDTO request) {
+    public CompletableFuture<ResponseEntity<ScreeningResponseDTO>> createScreening(@RequestBody ScreeningRequestDTO request) {
         return screeningService.createScreening(request)
                 .thenApply(ResponseEntity::ok);
     }
 
-    @PutMapping("/{id}")
-    public CompletableFuture<ResponseEntity<ScreeningResponseDTO>> updateScreening(
-            @PathVariable Long id,
-            @Valid @RequestBody ScreeningRequestDTO request) {
-        return screeningService.updateScreening(id, request)
+    @GetMapping("/{id}")
+    public CompletableFuture<ResponseEntity<ScreeningResponseDTO>> getScreeningById(@PathVariable Long id) {
+        return screeningService.getScreeningById(id)
                 .thenApply(ResponseEntity::ok);
     }
 
-    @DeleteMapping("/{id}")
-    public CompletableFuture<ResponseEntity<Void>> deleteScreening(@PathVariable Long id) {
-        return screeningService.deleteScreening(id)
-                .thenApply(r -> ResponseEntity.ok().build());
+    @GetMapping("/{id}/seats")
+    public CompletableFuture<ResponseEntity<List<SeatResponseDTO>>> getAvailableSeats(@PathVariable Long id) {
+        return screeningService.getAvailableSeats(id)
+                .thenApply(ResponseEntity::ok);
     }
-}
+
+    @GetMapping("/movie/{movieId}")
+    public CompletableFuture<ResponseEntity<List<ScreeningResponseDTO>>> getScreeningsByMovie(@PathVariable Long movieId) {
+        return screeningService.getScreeningsByMovie(movieId)
+                .thenApply(ResponseEntity::ok);
+    }
+} 

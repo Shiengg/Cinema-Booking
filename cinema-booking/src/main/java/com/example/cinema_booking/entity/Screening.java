@@ -1,5 +1,6 @@
 package com.example.cinema_booking.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -25,6 +26,7 @@ public class Screening {
 
     LocalDateTime screeningTime;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "screening", cascade = CascadeType.ALL)
     @Builder.Default
     Set<Seat> seats = ConcurrentHashMap.newKeySet();

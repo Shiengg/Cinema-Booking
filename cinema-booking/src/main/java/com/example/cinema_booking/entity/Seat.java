@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 @Entity
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
@@ -19,8 +17,8 @@ public class Seat {
     @JoinColumn(name = "screening_id")
     Screening screening;
 
+    String seatRow;
     String seatNumber;
-    String rowNumber;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -28,10 +26,6 @@ public class Seat {
 
     @Version
     Long version;
-
-    @Transient
-    @Builder.Default
-    AtomicBoolean isLoocked = new AtomicBoolean(false);
 
     @OneToOne(mappedBy = "seat", cascade = CascadeType.ALL)
     Booking currentBooking;

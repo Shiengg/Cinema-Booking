@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MovieRepository extends JpaRepository<Movie,Long> {
+public interface MovieRepository extends JpaRepository<Movie, Long> {
     Optional<Movie> findByTitle(String title);
     List<Movie> findByGenre(String genre);
 }

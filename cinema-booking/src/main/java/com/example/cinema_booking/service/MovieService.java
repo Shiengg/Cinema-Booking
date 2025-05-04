@@ -3,82 +3,75 @@ package com.example.cinema_booking.service;
 import com.example.cinema_booking.dto.request.MovieRequestDTO;
 import com.example.cinema_booking.dto.response.MovieResponseDTO;
 import com.example.cinema_booking.entity.Movie;
-import com.example.cinema_booking.exception.ResourceNotFoundException;
 import com.example.cinema_booking.repository.MovieRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MovieService {
     private final MovieRepository movieRepository;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(5);
 
+    @Async
     @Transactional
-    public CompletableFuture<MovieResponseDTO> createMovie(MovieRequestDTO request) {
-        return CompletableFuture.supplyAsync(() -> {
-            Movie movie = Movie.builder()
-                    .title(request.getTitle())
-                    .genre(request.getGenre())
-                    .description(request.getDescription())
-                    .ticketPrice(request.getTicketPrice())
-                    .build();
-            Movie savedMovie = movieRepository.save(movie);
-            return convertToResponse(savedMovie);
-        }, executorService);
+    public CompletableFuture<MovieResponseDTO> createMovie(MovieRequestDTO movieRequest) {
+        Movie movie = Movie.builder()
+                .title(movieRequest.getTitle())
+                .genre(movieRequest.getGenre())
+                .description(movieRequest.getDescription())
+                .ticketPrice(movieRequest.getTicketPrice())
+                .build();
+        
+        Movie savedMovie = movieRepository.save(movie);
+        return CompletableFuture.completedFuture(convertToDTO(savedMovie));
     }
 
-    public CompletableFuture<MovieResponseDTO> getMovieById(Long id) {
-        return CompletableFuture.supplyAsync(() -> {
-            Movie movie = movieRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " + id));
-            return convertToResponse(movie);
-        }, executorService);
-    }
-
+    @Async
+    @Transactional(readOnly = true)
     public CompletableFuture<List<MovieResponseDTO>> getAllMovies() {
-        return CompletableFuture.supplyAsync(() -> 
-            movieRepository.findAll().stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList()),
-            executorService
-        );
+        List<MovieResponseDTO> movies = movieRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        return CompletableFuture.completedFuture(movies);
     }
 
+    @Async
+    @Transactional(readOnly = true)
+    public CompletableFuture<MovieResponseDTO> getMovieById(Long id) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+        return CompletableFuture.completedFuture(convertToDTO(movie));
+    }
+
+    @Async
     @Transactional
-    public CompletableFuture<MovieResponseDTO> updateMovie(Long id, MovieRequestDTO request) {
-        return CompletableFuture.supplyAsync(() -> {
-            Movie movie = movieRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " + id));
-            
-            movie.setTitle(request.getTitle());
-            movie.setGenre(request.getGenre());
-            movie.setDescription(request.getDescription());
-            movie.setTicketPrice(request.getTicketPrice());
-            
-            Movie updatedMovie = movieRepository.save(movie);
-            return convertToResponse(updatedMovie);
-        }, executorService);
+    public CompletableFuture<MovieResponseDTO> updateMovie(Long id, MovieRequestDTO movieRequest) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+
+        movie.setTitle(movieRequest.getTitle());
+        movie.setGenre(movieRequest.getGenre());
+        movie.setDescription(movieRequest.getDescription());
+        movie.setTicketPrice(movieRequest.getTicketPrice());
+
+        Movie updatedMovie = movieRepository.save(movie);
+        return CompletableFuture.completedFuture(convertToDTO(updatedMovie));
     }
 
+    @Async
     @Transactional
     public CompletableFuture<Void> deleteMovie(Long id) {
-        return CompletableFuture.runAsync(() -> {
-            if (!movieRepository.existsById(id)) {
-                throw new ResourceNotFoundException("Movie not found with id: " + id);
-            }
-            movieRepository.deleteById(id);
-        }, executorService);
+        movieRepository.deleteById(id);
+        return CompletableFuture.completedFuture(null);
     }
 
-    private MovieResponseDTO convertToResponse(Movie movie) {
+    private MovieResponseDTO convertToDTO(Movie movie) {
         return MovieResponseDTO.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
@@ -87,4 +80,4 @@ public class MovieService {
                 .ticketPrice(movie.getTicketPrice())
                 .build();
     }
-}
+} 

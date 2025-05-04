@@ -1,5 +1,6 @@
 package com.example.cinema_booking.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -24,6 +25,7 @@ public class Movie {
     String description;
     double ticketPrice;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL)
     @Builder.Default
     List<Screening> screenings = new ArrayList<>();

@@ -17,6 +17,12 @@ import java.util.concurrent.CompletableFuture;
 public class MovieController {
     private final MovieService movieService;
 
+    @PostMapping
+    public CompletableFuture<ResponseEntity<MovieResponseDTO>> createMovie(@RequestBody MovieRequestDTO movieRequest) {
+        return movieService.createMovie(movieRequest)
+                .thenApply(ResponseEntity::ok);
+    }
+
     @GetMapping
     public CompletableFuture<ResponseEntity<List<MovieResponseDTO>>> getAllMovies() {
         return movieService.getAllMovies()
@@ -24,28 +30,22 @@ public class MovieController {
     }
 
     @GetMapping("/{id}")
-    public CompletableFuture<ResponseEntity<MovieResponseDTO>> getMovie(@PathVariable Long id) {
+    public CompletableFuture<ResponseEntity<MovieResponseDTO>> getMovieById(@PathVariable Long id) {
         return movieService.getMovieById(id)
-                .thenApply(ResponseEntity::ok);
-    }
-
-    @PostMapping
-    public CompletableFuture<ResponseEntity<MovieResponseDTO>> createMovie(@RequestBody MovieRequestDTO request) {
-        return movieService.createMovie(request)
                 .thenApply(ResponseEntity::ok);
     }
 
     @PutMapping("/{id}")
     public CompletableFuture<ResponseEntity<MovieResponseDTO>> updateMovie(
             @PathVariable Long id,
-            @RequestBody MovieRequestDTO request) {
-        return movieService.updateMovie(id, request)
+            @RequestBody MovieRequestDTO movieRequest) {
+        return movieService.updateMovie(id, movieRequest)
                 .thenApply(ResponseEntity::ok);
     }
 
     @DeleteMapping("/{id}")
     public CompletableFuture<ResponseEntity<Void>> deleteMovie(@PathVariable Long id) {
         return movieService.deleteMovie(id)
-                .thenApply(r -> ResponseEntity.ok().build());
+                .thenApply(result -> ResponseEntity.ok().build());
     }
 }
