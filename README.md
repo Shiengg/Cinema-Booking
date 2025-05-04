@@ -85,7 +85,7 @@ docker-compose restart [service_name]  # ví dụ: docker-compose restart app
 ### Xóa tất cả data và rebuild
 ```bash
 docker-compose down -v
-docker-compose up --build
+docker-compose up --build --no-cache
 ```
 
 ## Xử lý sự cố
