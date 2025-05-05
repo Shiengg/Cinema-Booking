@@ -30,7 +30,8 @@ cd Cinema-Booking
 Sử dụng Docker Compose để khởi động toàn bộ hệ thống:
 
 ```bash
-docker-compose up --build
+docker-compose build --no-cache
+docker-compose up -d
 ```
 
 Lệnh này sẽ:
