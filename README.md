@@ -109,7 +109,7 @@ docker-compose up -d
 
 3. **Database không khởi động**
    - Xóa volume cũ: `docker-compose down -v`
-   - Khởi động lại với volume mới: `docker-compose up --build --no-cache`
+   - Khởi động lại với volume mới: `docker-compose up build --no-cache`
 
 ## Giấy phép
 
